@@ -13,8 +13,8 @@ SystemCursor("Init")
 ; Get the current mouse position, and store its coordinates
 MouseGetPos mX0, mY0
 
-; Set a timer to check if the mouse is still idle every 250ms
-SetTimer, CheckIdle, 250
+; Set a timer to check if the mouse is still idle every 100ms
+SetTimer, CheckIdle, 100
 
 ; Register the keys you want to listen on
 keys = ``1234567890-=qwertyuiop[]\asdfghjkl;'zxcvbnm,./
@@ -24,13 +24,21 @@ Loop Parse, keys
    HotKey ~*%A_LoopField%, Hoty
 return
 
+threshold := 200
+
 ; Checks if the mouse has moved, and if so, shows it and records the new position
 CheckIdle:
 MouseGetPos mX, mY
 if (mX0 != mX && mY0 != mY)
 {
-    SystemCursor("On")
-    mX0 := mX, mY0 := mY
+	difX := Abs(mX0 - mX)
+	difY := Abs(mY0 - mY)
+	if (difX > threshold || difY > threshold) 
+	{
+	    SystemCursor("On")
+	    mX0 := mX, mY0 := mY
+	    MouseDisable := 0 
+	}
 }
 return
 
@@ -75,13 +83,22 @@ SystemCursor(OnOff=1)   ; INIT = "I","Init"; OFF = 0,"Off"; TOGGLE = -1,"T","Tog
     }
 
     if (OnOff = 0 or OnOff = "Off" or $ = "h" and (OnOff < 0 or OnOff = "Toggle" or OnOff = "T"))
+    {
         $ = b  ; use blank cursors
+        Hotkey,LButton,Disabled_Click,On
+    }
     else
+    {
         $ = h  ; use the saved cursors
+        Hotkey,LButton,Disabled_Click,Off 
+    }
 
     Loop %c0%
     {
         h_cursor := DllCall( "CopyImage", "uint",%$%%A_Index%, "uint",2, "int",0, "int",0, "uint",0 )
         DllCall( "SetSystemCursor", "uint",h_cursor, "uint",c%A_Index% )
     }
+
+    Disabled_Click:
+    return
 }
